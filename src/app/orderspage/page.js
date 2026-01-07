@@ -7,71 +7,170 @@ export default function AcceptedOrders() {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  // LOGIC ADDED: State to track if driver is already busy
+  
+  // LOGIC FROM FIRST: State to track if driver is already busy
   const [hasActiveDelivery, setHasActiveDelivery] = useState(false);
+  
+  // LOGIC FROM SECOND: track active status
+  const [isActive, setIsActive] = useState(true);
 
-  // ✅ FIXED LOGIC: Moved inside the component so 'orders' is defined
+  // ✅ FIXED LOGIC FROM FIRST: Define current user and check state here
   const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const hasActiveOrder = orders.some(o => o.deliveryBoyId === currentUserId && o.status !== "Delivered");
 
-  useEffect(() => {
-    const fetchOrders = async () => {
+  // FIRST CODE'S fetchOrders function
+  const fetchOrders = async () => {
+    try {
+      const deliveryBoyId = localStorage.getItem("userId");
+
+      if (!deliveryBoyId) {
+        console.warn("No userId in localStorage");
+        setOrders([]);
+        setFilteredOrders([]);
+        setLoading(false);
+        return;
+      }
+
+      // LOGIC FROM FIRST: Call your Accepted Deliveries API
+      const activeRes = await fetch("/api/accepted-deliveries");
+      const activeData = await activeRes.json();
+      if (activeData.success) {
+         // If any order in the list belongs to this driver, they are busy
+         const isBusy = activeData.data.some(d => d.deliveryBoyId === deliveryBoyId);
+         setHasActiveDelivery(isBusy);
+      }
+
+      const res = await fetch(
+        `/api/acceptedorders?deliveryBoyId=${deliveryBoyId}`
+      );
+
+      if (!res.ok) {
+        console.error("API error:", res.status);
+        setOrders([]);
+        setFilteredOrders([]);
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      const ordersArray = Array.isArray(data) ? data : [];
+      
+      // Filter orders where current user hasn't rejected
+      const filtered = ordersArray.filter(order => 
+        !order.rejectedBy?.includes(deliveryBoyId)
+      );
+      
+      setOrders(ordersArray);
+      setFilteredOrders(filtered);
+      setLoading(false);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      setOrders([]);
+      setFilteredOrders([]);
+      setLoading(false);
+    }
+  };
+
+  // SECOND CODE'S fetchOrdersAndStatus function
+  const fetchOrdersAndStatus = async () => {
+    try {
+      const deliveryBoyId = localStorage.getItem("userId");
+
+      if (!deliveryBoyId) {
+        console.warn("No userId in localStorage");
+        setOrders([]);
+        setFilteredOrders([]);
+        setLoading(false);
+        return;
+      }
+
+      // Try to fetch active status first, but don't fail if API doesn't exist
       try {
-        const deliveryBoyId = localStorage.getItem("userId");
-
-        if (!deliveryBoyId) {
-          console.warn("No userId in localStorage");
-          setOrders([]);
-          setFilteredOrders([]);
-          setLoading(false);
-          return;
+        const statusRes = await fetch(
+          `/api/delivery/status?deliveryBoyId=${deliveryBoyId}`
+        );
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          setIsActive(statusData.isActive);
+        } else {
+          // If API returns error, default to active status
+          console.warn("Status API returned error, defaulting to active");
+          setIsActive(true);
         }
+      } catch (err) {
+        // If fetch completely fails, default to active and continue
+        console.warn("Could not fetch status, defaulting to active:", err.message);
+        setIsActive(true);
+      }
 
-        // LOGIC ADDED: Call your Accepted Deliveries API
+      // LOGIC FROM FIRST: Call your Accepted Deliveries API
+      try {
         const activeRes = await fetch("/api/accepted-deliveries");
         const activeData = await activeRes.json();
         if (activeData.success) {
-           // If any order in the list belongs to this driver, they are busy
-           const isBusy = activeData.data.some(d => d.deliveryBoyId === deliveryBoyId);
-           setHasActiveDelivery(isBusy);
+          // If any order in the list belongs to this driver, they are busy
+          const isBusy = activeData.data.some(d => d.deliveryBoyId === deliveryBoyId);
+          setHasActiveDelivery(isBusy);
         }
-
-        const res = await fetch(
-          `/api/acceptedorders?deliveryBoyId=${deliveryBoyId}`
-        );
-
-        if (!res.ok) {
-          console.error("API error:", res.status);
-          setOrders([]);
-          setFilteredOrders([]);
-          setLoading(false);
-          return;
-        }
-
-        const data = await res.json();
-        const ordersArray = Array.isArray(data) ? data : [];
-        
-        // Filter orders where current user hasn't rejected
-        const filtered = ordersArray.filter(order => 
-          !order.rejectedBy?.includes(deliveryBoyId)
-        );
-        
-        setOrders(ordersArray);
-        setFilteredOrders(filtered);
       } catch (err) {
-        console.error("Fetch failed:", err);
+        console.warn("Could not fetch active deliveries:", err.message);
+      }
+
+      // Fetch orders regardless of status for now
+      const res = await fetch(
+        `/api/acceptedorders?deliveryBoyId=${deliveryBoyId}`
+      );
+
+      if (!res.ok) {
+        console.error("API error:", res.status);
         setOrders([]);
         setFilteredOrders([]);
-      } finally {
         setLoading(false);
+        return;
       }
-    };
 
+      const data = await res.json();
+      const ordersArray = Array.isArray(data) ? data : [];
+
+      // Filter orders where current user hasn't rejected
+      const filtered = ordersArray.filter(
+        (order) => !order.rejectedBy?.includes(deliveryBoyId)
+      );
+
+      setOrders(ordersArray);
+      setFilteredOrders(filtered);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      setOrders([]);
+      setFilteredOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // FIRST CODE'S useEffect with polling
+  useEffect(() => {
+    // Initial fetch using first code's approach
     fetchOrders();
+
+    // Set up polling every 3 seconds
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 3000);
+
+    // Cleanup function to clear interval when component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
-  // ✅ ACCEPT ORDER
-  const acceptOrder = async (orderId) => {
+  // SECOND CODE'S useEffect without polling
+  useEffect(() => {
+    fetchOrdersAndStatus();
+  }, []);
+
+  // ✅ FIRST CODE'S ACCEPT ORDER
+  const acceptOrderFirst = async (orderId) => {
     const deliveryBoyId = localStorage.getItem("userId");
 
     if (!deliveryBoyId) {
@@ -79,7 +178,13 @@ export default function AcceptedOrders() {
       return;
     }
 
-    // LOGIC ADDED: Prevent acceptance if already busy
+    // ADDED: Check if delivery boy is active
+    if (!isActive) {
+      alert("You must set yourself as Active to accept orders!");
+      return;
+    }
+
+    // LOGIC FROM FIRST: Prevent acceptance if already busy
     if (hasActiveDelivery || hasActiveOrder) {
        alert("Finish your active order first!");
        return;
@@ -92,12 +197,14 @@ export default function AcceptedOrders() {
         body: JSON.stringify({ orderId, deliveryBoyId }),
       });
       const serverData = await res.json();
-      if (!res.ok) {
-        alert(serverData.message || "Order already accepted or failed");
-        // Remove from list immediately if someone else took it
-        setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
-        return;
-      }
+     if (!res.ok) {
+  // If the server sends 409 (Conflict), serverData.message will be "Too late!..."
+  alert(serverData.message); 
+  
+  // Remove from list immediately so the boy doesn't try again
+  setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
+  return;
+}
      
 
       // Update both orders states
@@ -110,12 +217,61 @@ export default function AcceptedOrders() {
     }
   };
 
-  // ❌ REJECT ORDER
-  const rejectOrder = async (orderId) => {
+  // ✅ SECOND CODE'S ACCEPT ORDER
+  const acceptOrderSecond = async (orderId) => {
     const deliveryBoyId = localStorage.getItem("userId");
 
     if (!deliveryBoyId) {
       alert("Login expired");
+      return;
+    }
+
+    // Check if delivery boy is active
+    if (!isActive) {
+      alert("You must set yourself as Active to accept orders!");
+      return;
+    }
+
+    // LOGIC FROM FIRST: Prevent acceptance if already busy
+    if (hasActiveDelivery || hasActiveOrder) {
+      alert("Finish your active order first!");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/acceptedorders/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, deliveryBoyId }),
+      });
+
+      if (!res.ok) {
+        alert("Order already accepted or failed");
+        return;
+      }
+
+      // Update both orders states
+      setOrders((prev) => prev.filter((o) => o._id !== orderId));
+      setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
+      alert("Order accepted successfully");
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    }
+  };
+
+  // ❌ FIRST CODE'S REJECT ORDER
+  const rejectOrderFirst = async (orderId) => {
+    const deliveryBoyId = localStorage.getItem("userId");
+
+    if (!deliveryBoyId) {
+      alert("Login expired");
+      return;
+    }
+
+    // ADDED: Check if delivery boy is active
+    if (!isActive) {
+      alert("You must set yourself as Active to reject orders!");
       return;
     }
 
@@ -130,7 +286,69 @@ export default function AcceptedOrders() {
     setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
   };
 
-  // Format currency
+  // ❌ SECOND CODE'S REJECT ORDER
+  const rejectOrderSecond = async (orderId) => {
+    const deliveryBoyId = localStorage.getItem("userId");
+
+    if (!deliveryBoyId) {
+      alert("Login expired");
+      return;
+    }
+
+    // Check if delivery boy is active
+    if (!isActive) {
+      alert("You must set yourself as Active to reject orders!");
+      return;
+    }
+
+    await fetch("/api/acceptedorders/reject", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, deliveryBoyId }),
+    });
+
+    // Update both orders states
+    setOrders((prev) => prev.filter((o) => o._id !== orderId));
+    setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
+  };
+
+  const toggleActiveStatus = async () => {
+    const deliveryBoyId = localStorage.getItem("userId");
+    if (!deliveryBoyId) return;
+
+    const newStatus = !isActive;
+
+    try {
+      const res = await fetch("/api/delivery/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deliveryBoyId,
+          isActive: newStatus,
+        }),
+      });
+
+      if (res.ok) {
+        setIsActive(newStatus);
+        // Show immediate feedback
+        alert(`You are now ${newStatus ? 'Active' : 'Inactive'}!`);
+        
+        // If going active, refresh orders
+        if (newStatus) {
+          fetchOrders();
+        }
+      } else {
+        alert("Failed to update status - API error");
+      }
+    } catch (err) {
+      console.error("Status update failed:", err);
+      // Even if API fails, update UI locally
+      setIsActive(newStatus);
+      alert(`You are now ${newStatus ? 'Active' : 'Inactive'} (local only - check API)`);
+    }
+  };
+
+  // Format currency (from both codes, same logic)
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -140,18 +358,17 @@ export default function AcceptedOrders() {
     }).format(amount);
   };
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="text-lg">Loading orders...</div>
-    </div>
-  );
+  
+  
+  // SECOND CODE'S loading check
   if (loading) return <Loading />;
+  
   return (
     <AuthWrapper>
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         
-        {/* LOGIC ADDED: Visual alert */}
+        {/* LOGIC FROM FIRST: Visual alert for active delivery */}
         {(hasActiveDelivery || hasActiveOrder) && (
           <div className="bg-red-600 text-white p-4 rounded-lg mb-6 font-bold text-center">
             ⚠️ ACTIVE DELIVERY IN PROGRESS. FINISH IT TO ACCEPT NEW ORDERS.
@@ -160,9 +377,44 @@ export default function AcceptedOrders() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Available Orders</h1>
+          
+          {/* Status indicator from SECOND CODE */}
+          <div className="flex items-center gap-4 mt-2">
+            <div className={`flex items-center gap-2 ${isActive ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="font-medium">
+                Status: {isActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
+          
           <p className="text-gray-600 mt-2">
             Orders available for delivery. Orders you've rejected are automatically hidden.
           </p>
+          
+          {/* TOGGLE BUTTON from SECOND CODE */}
+          <div className="mt-4">
+            <button
+              onClick={toggleActiveStatus}
+              className={`px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
+                isActive
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
+            >
+              {isActive
+                ? "🟢 Active - Click to Go Inactive"
+                : "🔴 Inactive - Click to Go Active"}
+            </button>
+            
+            {/* Status explanation from SECOND CODE */}
+            <p className="text-sm text-gray-500 mt-2">
+              {isActive 
+                ? "✓ You can accept new delivery orders"
+                : "✗ You cannot accept new delivery orders"}
+            </p>
+          </div>
+          
           <div className="flex items-center gap-4 mt-4 text-sm">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
@@ -175,7 +427,24 @@ export default function AcceptedOrders() {
           </div>
         </div>
 
-        {filteredOrders.length === 0 ? (
+        {/* ADDED: Check if delivery boy is inactive - show message instead of orders */}
+        {!isActive ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow">
+            <div className="text-gray-400 text-6xl mb-4">⏸️</div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">
+              You are currently Inactive
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Set yourself as Active to see and accept delivery orders.
+            </p>
+            <button
+              onClick={toggleActiveStatus}
+              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-200"
+            >
+              Go Active Now
+            </button>
+          </div>
+        ) : filteredOrders.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <div className="text-gray-400 text-6xl mb-4">📦</div>
             <h3 className="text-xl font-medium text-gray-900 mb-2">
@@ -410,28 +679,39 @@ export default function AcceptedOrders() {
                           )}
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => rejectOrder(order._id)}
-                            className="px-6 py-2 border-2 border-red-600 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors duration-200 flex items-center"
-                          >
-                            <span className="mr-2">✗</span>
-                            Reject
-                          </button>
-                          <button
-                            onClick={() => acceptOrder(order._id)}
-                            // Logic added: visually and functionally disable
-                            disabled={hasActiveDelivery || hasActiveOrder}
-                            className={`px-6 py-2 font-semibold rounded-lg shadow-md flex items-center transition-all ${
-                              (hasActiveDelivery || hasActiveOrder)
-                                ? "bg-gray-400 cursor-not-allowed opacity-70" 
-                                : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90"
-                            }`}
-                          >
-                            <span className="mr-2">✓</span>
-                            {(hasActiveDelivery || hasActiveOrder) ? "Finish Active Order First" : "Accept Delivery"}
-                          </button>
+                        {/* Action Buttons - Showing both sets of buttons */}
+                        <div className="space-y-3">
+                          {/* FIRST CODE'S ACTION BUTTONS */}
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => rejectOrderFirst(order._id)}
+                              // ADDED: Disable if inactive
+                              disabled={!isActive}
+                              className={`px-6 py-2 border-2 border-red-600 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors duration-200 flex items-center ${
+                                !isActive ? "opacity-50 cursor-not-allowed" : ""
+                              }`}
+                            >
+                              <span className="mr-2">✗</span>
+                              {!isActive ? "Set Active to Reject" : "Reject"}
+                            </button>
+                            <button
+                              onClick={() => acceptOrderFirst(order._id)}
+                              // ADDED: Disable if inactive OR has active delivery
+                              disabled={!isActive || hasActiveDelivery || hasActiveOrder}
+                              className={`px-6 py-2 font-semibold rounded-lg shadow-md flex items-center transition-all ${
+                                (!isActive || hasActiveDelivery || hasActiveOrder)
+                                  ? "bg-gray-400 cursor-not-allowed opacity-70" 
+                                  : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90"
+                              }`}
+                            >
+                              <span className="mr-2">✓</span>
+                              {!isActive 
+                                ? "Set Active to Accept"
+                                : (hasActiveDelivery || hasActiveOrder) 
+                                  ? "Finish Active Order First" 
+                                  : "Accept Delivery"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

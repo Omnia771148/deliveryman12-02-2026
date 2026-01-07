@@ -2,11 +2,23 @@ import { NextResponse } from "next/server";
 import connectionToDatabase from "../../../../lib/db";
 import AcceptedByDelivery from "../../../../models/AcceptedByDelivery";
 
-export async function GET() {
+export async function GET(req) {
   try {
     await connectionToDatabase();
 
-    const deliveries = await AcceptedByDelivery.find({})
+    // Get query parameters
+    const url = new URL(req.url);
+    const deliveryBoyId = url.searchParams.get("deliveryBoyId");
+
+    let query = {};
+    
+    // If deliveryBoyId is provided in query, filter by it
+    if (deliveryBoyId) {
+      query.deliveryBoyId = deliveryBoyId;
+    }
+
+    // Execute query with or without filter
+    const deliveries = await AcceptedByDelivery.find(query)
       .sort({ acceptedAt: -1 })
       .lean();
 
@@ -17,27 +29,34 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Fetch deliveries error:", error);
+    
+    // Return both error messages from both codes
     return NextResponse.json(
       { 
         success: false, 
-        message: "Internal server error" 
+        message: "Internal server error",
+        message2: "Error fetching data" 
       },
       { status: 500 }
     );
   }
 }
 
-// ✅ UPDATED POST LOGIC TO STOP MILLISECOND COLLISIONS
 export async function POST(req) {
   try {
     await connectionToDatabase();
     
-    // We get the full order body from the request
     const body = await req.json();
     const { orderId, deliveryBoyId } = body;
 
-    // 1. Check if this specific delivery boy already has an active order
-    // Status must not be "Delivered" for them to be considered "Busy"
+    if (!orderId || !deliveryBoyId) {
+      return NextResponse.json(
+        { success: false, message: "Order ID and Delivery Boy ID are required" }, 
+        { status: 400 }
+      );
+    }
+
+    // 1. Check if the boy is busy
     const boyIsBusy = await AcceptedByDelivery.findOne({ 
       deliveryBoyId: deliveryBoyId, 
       status: { $ne: "Delivered" } 
@@ -50,17 +69,30 @@ export async function POST(req) {
       );
     }
 
-    // 2. ATOMIC OPERATION: Try to create the record
-    // Because 'orderId' is marked as UNIQUE in your model, 
-    // the database will physically block two people from saving the same orderId.
+    // 2. Check if order is already accepted (ADDED THIS CHECK)
+    const orderAlreadyAccepted = await AcceptedByDelivery.findOne({
+      orderId: orderId
+    });
+
+    if (orderAlreadyAccepted) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Too late! Another delivery boy just accepted this order." 
+        }, 
+        { status: 409 }
+      );
+    }
+
+    // 3. Try to save the order
     try {
       const newAcceptedOrder = new AcceptedByDelivery({
-        ...body, // Spreads all order data into the new document
+        ...body,
         acceptedAt: new Date(),
         status: "Accepted by Delivery"
       });
 
-      // This line is the physical "Lock". MongoDB will handle the queue.
+      // This triggers the Unique Index wall
       await newAcceptedOrder.save();
 
       return NextResponse.json({ 
@@ -69,24 +101,29 @@ export async function POST(req) {
       });
 
     } catch (dbError) {
-      // ✅ Check for MongoDB Duplicate Key Error (Code 11000)
-      // This triggers if another boy saved the exact same orderId a millisecond before you
+      // ✅ FIX: Catch the 11000 Duplicate error and return "Too Late"
       if (dbError.code === 11000) {
         return NextResponse.json(
           { 
             success: false, 
             message: "Too late! Another delivery boy just accepted this order." 
           }, 
-          { status: 409 } // 409 means 'Conflict'
+          { status: 409 } // Conflict Status
         );
       }
-      throw dbError; // Rethrow other database errors
+      
+      // If it's another DB error, return a specific message
+      return NextResponse.json(
+        { success: false, message: "Database rejected the order." },
+        { status: 500 }
+      );
     }
 
   } catch (error) {
-    console.error("Validation error:", error);
+    // ✅ FIX: Handle the outer catch block
+    console.error("Server Logic Error:", error);
     return NextResponse.json(
-      { success: false, message: "Internal server error" }, 
+      { success: false, message: "Server connection error." },
       { status: 500 }
     );
   }

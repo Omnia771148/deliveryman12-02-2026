@@ -1,0 +1,85 @@
+import mongoose from "mongoose";
+
+const ItemSchema = new mongoose.Schema({
+  itemId: String,
+  name: String,
+  price: Number,
+  quantity: Number,
+});
+
+const LocationSchema = new mongoose.Schema({
+  lat: Number,
+  lng: Number,
+  mapUrl: String,
+});
+
+const FinalCompletedOrderSchema = new mongoose.Schema(
+  {
+    originalOrderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AcceptedOrder",
+      required: true,
+    },
+
+    originalAcceptedOrderId: {
+      type: String,
+      required: true,
+    },
+
+    orderId: String,
+    deliveryBoyId: String,
+
+    userId: String,
+    restaurantId: String,
+
+    items: [ItemSchema],
+    totalCount: Number,
+    totalPrice: Number,
+    gst: Number,
+    deliveryCharge: Number,
+    grandTotal: Number,
+    aa: String,
+
+    location: LocationSchema,
+
+    paymentStatus: {
+      type: String,
+      default: "Completed",
+    },
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+
+    orderDate: Date,
+    acceptedAt: Date,
+    completedAt: {
+      type: Date,
+      default: Date.now,
+    },
+
+    status: {
+      type: String,
+      default: "Completed",
+    },
+
+    rest: String,
+    rejectedBy: {
+      type: [String],
+      default: [],
+    },
+
+    verificationStatus: {
+      type: String,
+      default: "verified"
+    },
+
+    verificationTime: {
+      type: Date,
+      default: Date.now,
+    },
+
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.FinalCompletedOrder ||
+  mongoose.model("FinalCompletedOrder", FinalCompletedOrderSchema);
