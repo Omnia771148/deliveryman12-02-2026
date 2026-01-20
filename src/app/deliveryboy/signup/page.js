@@ -1,25 +1,28 @@
 "use client";
 import { useState } from "react";
-import { storage } from "../../../../lib/firebase"; 
+import { storage, auth } from "../../../../lib/firebase"; 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"; 
 import imageCompression from 'browser-image-compression';
-import Loading from "../../loading/page";  // Import your pizza loading component
+import Loading from "../../loading/page";
 
 export default function DeliveryBoySignup() {
   const [form, setForm] = useState({
     name: "", email: "", password: "", phone: ""
   });
   
-  // NEW: State to hold the actual file objects locally
+  // COMMENTED OUT: Document storage state
   const [selectedFiles, setSelectedFiles] = useState({
-    aadharUrl: null,
+    /* aadharUrl: null,
     rcUrl: null,
-    licenseUrl: null
+    licenseUrl: null */
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [isOtpSent, setIsOtpSent] = useState(false);
 
-  // 1. Just store the file in state (don't upload yet)
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
@@ -30,45 +33,61 @@ export default function DeliveryBoySignup() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  // 2. Upload all 3 files at once during Signup
-  const handleSubmit = async (e) => {
+  const sendOtp = async (e) => {
     e.preventDefault();
-
-    // Check if all files are selected
-    if (!selectedFiles.aadharUrl || !selectedFiles.rcUrl || !selectedFiles.licenseUrl) {
-      alert("Please select all 3 photos first!");
+    if (!form.phone.startsWith("+")) {
+      alert("Please enter phone number with country code (e.g., +919876543210)");
       return;
     }
 
-    setIsSubmitting(true); // Show Pizza Loading
+    try {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible'
+      });
+      const result = await signInWithPhoneNumber(auth, form.phone, window.recaptchaVerifier);
+      setConfirmationResult(result);
+      setIsOtpSent(true);
+      alert("OTP sent to your phone!");
+    } catch (error) {
+      console.error("OTP Error:", error);
+      alert("Failed to send OTP. Check console.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+
+    // COMMENTED OUT: Document validation
+    /* if (!selectedFiles.aadharUrl || !selectedFiles.rcUrl || !selectedFiles.licenseUrl) {
+      alert("Please select all 3 photos first!");
+      return;
+    } */
+
+    setIsSubmitting(true);
 
     try {
-      const uploadResults = {};
-      const fileKeys = ["aadharUrl", "rcUrl", "licenseUrl"];
+      const result = await confirmationResult.confirm(otp);
+      const firebaseUser = result.user; 
 
-      // Process and Upload each file
+      const uploadResults = {};
+      
+      // COMMENTED OUT: The upload loop for documents
+      /*
+      const fileKeys = ["aadharUrl", "rcUrl", "licenseUrl"];
       for (const key of fileKeys) {
         const file = selectedFiles[key];
-        
-        // Compress
-        const options = {
-          maxSizeMB: 0.1,
-          maxWidthOrHeight: 800,
-          useWebWorker: true,
-          initialQuality: 0.5,
-        };
+        const options = { maxSizeMB: 0.1, maxWidthOrHeight: 800, useWebWorker: true, initialQuality: 0.5 };
         const compressedFile = await imageCompression(file, options);
 
-        // Upload to Firebase
-        const storageRef = ref(storage, `delivery_docs/${form.phone || "unknown"}/${key}`);
+        const storageRef = ref(storage, `delivery_docs/${form.phone}/${key}`);
         await uploadBytes(storageRef, compressedFile);
         const url = await getDownloadURL(storageRef);
-        
-        uploadResults[key] = url; // Save URL for the API call
+        uploadResults[key] = url;
       }
+      */
 
-      // 3. Send data to your API with the Firebase URLs
-      const finalFormData = { ...form, ...uploadResults };
+      // API CALL TO MONGODB (Removed uploadResults from here)
+      const finalFormData = { ...form, firebaseUid: firebaseUser.uid };
       const res = await fetch("/api/deliveryboy/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -84,8 +103,8 @@ export default function DeliveryBoySignup() {
         setIsSubmitting(false);
       }
     } catch (error) {
-      console.error("Signup error:", error);
-      alert("Error during upload or signup.");
+      console.error("Verification/Signup error:", error);
+      alert("Invalid OTP or Registration failed.");
       setIsSubmitting(false);
     }
   };
@@ -93,36 +112,52 @@ export default function DeliveryBoySignup() {
   return (
     <div style={{ maxWidth: 350, margin: "40px auto", padding: "20px", fontFamily: "sans-serif" }}>
       {isSubmitting && <Loading />}
+      <div id="recaptcha-container"></div>
 
       <h2>Delivery Boy Signup</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="name" placeholder="Name" onChange={handleChange} style={inputStyle} required />
-        <input name="email" placeholder="Email" onChange={handleChange} style={inputStyle} required />
-        <input name="phone" placeholder="Phone" onChange={handleChange} style={inputStyle} required />
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} style={inputStyle} required />
-        
-        {[ 
-          { label: "Aadhar Card", field: "aadharUrl" },
-          { label: "RC Book", field: "rcUrl" },
-          { label: "Driving License", field: "licenseUrl" }
-        ].map((item) => (
-          <div key={item.field} style={uploadBox}>
-            <label style={{ fontSize: "14px", fontWeight: "bold" }}>{item.label}:</label>
-            <input 
-              type="file" accept="image/*" capture="environment" 
-              onChange={(e) => handleFileChange(e, item.field)} 
-              style={{ display: "block", marginTop: "5px" }}
-            />
-            {selectedFiles[item.field] && (
-              <span style={{ color: "blue", fontSize: "12px" }}>📍 File Selected</span>
-            )}
-          </div>
-        ))}
-
-        <button type="submit" style={btnStyle} disabled={isSubmitting}>
-          {isSubmitting ? "Uploading & Saving..." : "Signup"}
-        </button>
-      </form>
+      
+      {!isOtpSent ? (
+        <form onSubmit={sendOtp}>
+          <input name="name" placeholder="Name" onChange={handleChange} style={inputStyle} required />
+          <input name="email" placeholder="Email" onChange={handleChange} style={inputStyle} required />
+          <input name="phone" placeholder="Phone (with +91)" onChange={handleChange} style={inputStyle} required />
+          <input name="password" type="password" placeholder="Password" onChange={handleChange} style={inputStyle} required />
+          
+          {/* COMMENTED OUT: Document Upload UI fields */}
+          {/* {[ 
+            { label: "Aadhar Card", field: "aadharUrl" },
+            { label: "RC Book", field: "rcUrl" },
+            { label: "Driving License", field: "licenseUrl" }
+          ].map((item) => (
+            <div key={item.field} style={uploadBox}>
+              <label style={{ fontSize: "14px", fontWeight: "bold" }}>{item.label}:</label>
+              <input 
+                type="file" accept="image/*" capture="environment" 
+                onChange={(e) => handleFileChange(e, item.field)} 
+                style={{ display: "block", marginTop: "5px" }}
+              />
+            </div>
+          ))} 
+          */}
+          <button type="submit" style={btnStyle}>Send OTP to Register</button>
+        </form>
+      ) : (
+        <div style={uploadBox}>
+          <label>Enter 6-digit OTP sent to {form.phone}</label>
+          <input 
+            type="text" 
+            placeholder="000000" 
+            onChange={(e) => setOtp(e.target.value)} 
+            style={inputStyle} 
+          />
+          <button onClick={handleSubmit} style={btnStyle} disabled={isSubmitting}>
+            {isSubmitting ? "Processing..." : "Verify OTP & Complete Signup"}
+          </button>
+          <button onClick={() => setIsOtpSent(false)} style={{...btnStyle, background: "#ccc", marginTop: "10px"}}>
+            Edit Phone Number
+          </button>
+        </div>
+      )}
     </div>
   );
 }

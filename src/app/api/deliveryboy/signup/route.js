@@ -4,33 +4,50 @@ import DeliveryBoyUser from "../../../../../models/DeliveryBoyUser";
 
 export async function POST(req) {
   try {
-    const { name, email, password, phone } = await req.json();
+    // 1. Destructure ALL incoming fields including Firebase UID and Image URLs
+    const { 
+      name, 
+      email, 
+      password, 
+      phone, 
+      firebaseUid, 
+      aadharUrl, 
+      rcUrl, 
+      licenseUrl 
+    } = await req.json();
 
-    if (!name || !email || !password || !phone) {
+    // 2. Updated Validation (Ensure docs and firebaseUid are present)
+    if (!name || !email || !password || !phone || !firebaseUid || !aadharUrl || !rcUrl || !licenseUrl) {
       return NextResponse.json(
-        { message: "All fields required" },
+        { message: "All fields and documents are required" },
         { status: 400 }
       );
     }
 
     await connectionToDatabase();
 
-    // check if email OR phone already exists
+    // 3. Check if email, phone, OR firebaseUid already exists
     const userExists = await DeliveryBoyUser.findOne({
-      $or: [{ email }, { phone }],
+      $or: [{ email }, { phone }, { firebaseUid }],
     });
+
     if (userExists) {
       return NextResponse.json(
-        { message: "User with this email or phone already exists" },
+        { message: "User already exists with this email, phone, or Firebase ID" },
         { status: 409 }
       );
     }
 
+    // 4. Create the full user profile in MongoDB
     await DeliveryBoyUser.create({
       name,
       email,
-      password, // <-- store as plain text
-      phone, // <-- store number here
+      password, // Plain text as requested
+      phone,
+      firebaseUid,
+      aadharUrl,
+      rcUrl,
+      licenseUrl,
     });
 
     return NextResponse.json(
@@ -38,9 +55,9 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.error(error);
+    console.error("MongoDB Signup Error:", error);
     return NextResponse.json(
-      { message: "Server error" },
+      { message: "Server error during registration" },
       { status: 500 }
     );
   }
