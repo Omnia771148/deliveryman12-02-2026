@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import AcceptedByDelivery from "../../../../models/AcceptedByDelivery";
 import FinalCompletedOrder from "../../../../models/FinalCompletedOrder";
 
+import DeliveryBoyUser from "../../../../models/DeliveryBoyUser";
+
 // ✅ ADD THIS (OrderStatus model)
 const OrderStatus =
   mongoose.models.OrderStatus ||
@@ -41,6 +43,18 @@ export async function POST(request) {
       );
     }
 
+    // ✅ FETCH DELIVERY BOY DETAILS (Use existing if available, else fetch)
+    let deliveryBoyName = order.deliveryBoyName || "";
+    let deliveryBoyPhone = order.deliveryBoyPhone || "";
+
+    if ((!deliveryBoyName || !deliveryBoyPhone) && order.deliveryBoyId) {
+      const deliveryBoy = await DeliveryBoyUser.findById(order.deliveryBoyId);
+      if (deliveryBoy) {
+        deliveryBoyName = deliveryBoyName || deliveryBoy.name;
+        deliveryBoyPhone = deliveryBoyPhone || deliveryBoy.phone;
+      }
+    }
+
     const orderData = order.toObject();
     delete orderData._id;
 
@@ -52,6 +66,8 @@ export async function POST(request) {
       verificationStatus: "verified",
       verificationTime: new Date(),
       originalAcceptedOrderId: orderId,
+      deliveryBoyName,
+      deliveryBoyPhone,
     };
 
     const completedOrder = new FinalCompletedOrder(completedOrderData);
@@ -67,6 +83,9 @@ export async function POST(request) {
           orderId: order.orderId,
           status: "completed ra kojja",
           updatedAt: new Date(),
+          deliveryBoyId: order.deliveryBoyId,
+          deliveryBoyName,
+          deliveryBoyPhone,
         },
       },
       { upsert: true }

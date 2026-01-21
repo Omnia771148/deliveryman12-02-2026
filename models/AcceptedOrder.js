@@ -20,6 +20,10 @@ const AcceptedOrderSchema = new mongoose.Schema({
   userId: String,
   restaurantId: String,
 
+  userName: String,
+  userEmail: String,
+  userPhone: String,
+
   items: [ItemSchema],
   totalCount: Number,
   totalPrice: Number,

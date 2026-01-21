@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 // 1. IMPORT YOUR LOADING COMPONENT
-import Loading from "../../loading/page"; 
+import Loading from "../../loading/page";
 
 export default function Login() {
-  const [users, setUsers] = useState([]); 
+  const [users, setUsers] = useState([]);
   const [inputPhone, setInputPhone] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [loggedInUserId, setLoggedInUserId] = useState("");
@@ -13,35 +13,35 @@ export default function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    
+
     const loggedInUser = localStorage.getItem("userId");
     const loginTime = localStorage.getItem("loginTimestamp");
 
     if (loggedInUser && loginTime) {
-        const currentTime = new Date().getTime();
-        const oneDayInMs = 1 * 24 * 60 * 60 * 1000;
+      const currentTime = new Date().getTime();
+      const oneDayInMs = 1 * 24 * 60 * 60 * 1000;
 
-        // CHANGED: Now comparing against oneDayInMs instead of sevenDays
-        if (currentTime - loginTime < oneDayInMs) {
-            window.location.href = "/orderspage";
-            return; 
-        } else {
-            // Optional: Clear storage if the 1 day has passed
-            localStorage.removeItem("userId");
-            localStorage.removeItem("loginTimestamp");
-        }
+      // CHANGED: Now comparing against oneDayInMs instead of sevenDays
+      if (currentTime - loginTime < oneDayInMs) {
+        window.location.href = "/orderspage";
+        return;
+      } else {
+        // Optional: Clear storage if the 1 day has passed
+        localStorage.removeItem("userId");
+        localStorage.removeItem("loginTimestamp");
+      }
     }
 
-    
+
     const fetchUsers = async () => {
       try {
-        const res = await fetch("/api/deliveryboy/login"); 
+        const res = await fetch("/api/deliveryboy/login");
         const data = await res.json();
-        
+
         if (Array.isArray(data)) {
-            setUsers(data);
+          setUsers(data);
         } else {
-            console.error("API did not return an array:", data);
+          console.error("API did not return an array:", data);
         }
       } catch (err) {
         console.error(err);
@@ -69,8 +69,10 @@ export default function Login() {
 
     if (matchedUser) {
       localStorage.setItem("userId", matchedUser._id);
+      localStorage.setItem("deliveryBoyName", matchedUser.name);
+      localStorage.setItem("deliveryBoyPhone", matchedUser.phone);
       localStorage.setItem("loginTimestamp", new Date().getTime().toString());
-      
+
       setLoggedInUserId(matchedUser._id);
       alert("Login successful!");
       window.location.href = "/orderspage";
@@ -113,7 +115,7 @@ export default function Login() {
         onClick={() => window.location.href = "/deliveryboy/signup"}
         style={{ padding: "10px 20px", marginTop: "10px", cursor: "pointer" }}
       >
-       signup
+        signup
       </button>
 
       {loggedInUserId && (
