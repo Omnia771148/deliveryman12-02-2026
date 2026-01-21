@@ -75,6 +75,7 @@ export async function POST(req) {
       aa: order.aa,
 
       location: order.location,
+      deliveryAddress: order.deliveryAddress,
 
       paymentStatus: order.paymentStatus,
       razorpayOrderId: order.razorpayOrderId,

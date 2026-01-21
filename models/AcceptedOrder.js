@@ -33,6 +33,7 @@ const AcceptedOrderSchema = new mongoose.Schema({
   aa: String,
 
   location: LocationSchema,
+  deliveryAddress: String,
 
   paymentStatus: {
     type: String,
