@@ -184,6 +184,9 @@ export default function ActiveDeliveriesPage() {
                 <div style={{ marginBottom: "15px" }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
+                      <p style={{ margin: "0 0 5px 0", fontSize: "14px", fontWeight: "bold", color: "#e67e22" }}>
+                        Order ID: {delivery.orderId}
+                      </p>
                       <h2 style={{ margin: "0 0 5px 0", fontSize: "18px", color: "#2c3e50" }}>
                         {delivery.rest || "Restaurant Name Not Available"}
                       </h2>
