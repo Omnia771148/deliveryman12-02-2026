@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import connectionToDatabase from "../../../../../lib/db";
 import AcceptedOrder from "../../../../../models/AcceptedOrder";
 import AcceptedByDelivery from "../../../../../models/AcceptedByDelivery";
+import DeliveryBoyUser from "../../../../../models/DeliveryBoyUser";
 
 const OrderStatus =
   mongoose.models.OrderStatus ||
@@ -16,13 +17,28 @@ export async function POST(req) {
   try {
     await connectionToDatabase();
 
-    const { orderId, deliveryBoyId } = await req.json();
+    let { orderId, deliveryBoyId, deliveryBoyName, deliveryBoyPhone } = await req.json();
 
     if (!orderId || !deliveryBoyId) {
       return NextResponse.json(
         { message: "Missing fields" },
         { status: 400 }
       );
+    }
+
+    // Fetch delivery boy details if not provided
+    if (!deliveryBoyName || !deliveryBoyPhone) {
+      try {
+        const deliveryBoy = await DeliveryBoyUser.findById(deliveryBoyId);
+        if (deliveryBoy) {
+          deliveryBoyName = deliveryBoyName || deliveryBoy.name;
+          deliveryBoyPhone = deliveryBoyPhone || deliveryBoy.phone;
+        }
+      } catch (error) {
+        console.error("Error fetching delivery boy details:", error);
+        // Continue without details if fetch fails, or handle as error?
+        // Proceeding allows the order to be accepted at least.
+      }
     }
 
     // 1️⃣ Find order from acceptedorders (YOUR EXISTING LOGIC)
@@ -40,9 +56,15 @@ export async function POST(req) {
       originalOrderId: order._id,
       orderId: order.orderId,
       deliveryBoyId,
+      deliveryBoyName,
+      deliveryBoyPhone,
 
       userId: order.userId,
       restaurantId: order.restaurantId,
+
+      userName: order.userName,
+      userEmail: order.userEmail,
+      userPhone: order.userPhone,
 
       items: order.items,
       totalCount: order.totalCount,
@@ -53,6 +75,7 @@ export async function POST(req) {
       aa: order.aa,
 
       location: order.location,
+      deliveryAddress: order.deliveryAddress,
 
       paymentStatus: order.paymentStatus,
       razorpayOrderId: order.razorpayOrderId,
@@ -70,7 +93,10 @@ export async function POST(req) {
       { orderId: order.orderId },
       {
         $set: {
-          status: "will be delivered soon" // ONLY CHANGE STATUS HERE
+          status: "will be delivered soon", // ONLY CHANGE STATUS HERE
+          deliveryBoyId,
+          deliveryBoyName,
+          deliveryBoyPhone
         }
       }
     );

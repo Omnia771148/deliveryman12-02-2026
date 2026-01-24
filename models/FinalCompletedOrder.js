@@ -28,9 +28,15 @@ const FinalCompletedOrderSchema = new mongoose.Schema(
 
     orderId: String,
     deliveryBoyId: String,
+    deliveryBoyName: String,
+    deliveryBoyPhone: String,
 
     userId: String,
     restaurantId: String,
+
+    userName: String,
+    userEmail: String,
+    userPhone: String,
 
     items: [ItemSchema],
     totalCount: Number,
@@ -41,6 +47,7 @@ const FinalCompletedOrderSchema = new mongoose.Schema(
     aa: String,
 
     location: LocationSchema,
+    deliveryAddress: String,
 
     paymentStatus: {
       type: String,

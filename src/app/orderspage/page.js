@@ -724,9 +724,7 @@ export default function AcceptedOrders() {
                                   ? "Finish Active Order First" 
                                   : "Accept Delivery"}
                             </button>
-                            <button>
-                              sai
-                            </button>
+                           
                           </div>
                         </div>
                       </div>

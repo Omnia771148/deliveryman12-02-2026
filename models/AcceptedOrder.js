@@ -20,6 +20,10 @@ const AcceptedOrderSchema = new mongoose.Schema({
   userId: String,
   restaurantId: String,
 
+  userName: String,
+  userEmail: String,
+  userPhone: String,
+
   items: [ItemSchema],
   totalCount: Number,
   totalPrice: Number,
@@ -29,6 +33,7 @@ const AcceptedOrderSchema = new mongoose.Schema({
   aa: String,
 
   location: LocationSchema,
+  deliveryAddress: String,
 
   paymentStatus: {
     type: String,
