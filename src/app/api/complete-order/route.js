@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import AcceptedByDelivery from "../../../../models/AcceptedByDelivery";
 import FinalCompletedOrder from "../../../../models/FinalCompletedOrder";
+import AcceptedOrder from "../../../../models/AcceptedOrder";
 
 import DeliveryBoyUser from "../../../../models/DeliveryBoyUser";
 
@@ -90,6 +91,12 @@ export async function POST(request) {
       },
       { upsert: true }
     );
+
+    // ✅ DELETE from AcceptedOrder (Clean up the original order now that it's completed)
+    if (order.originalOrderId) {
+      await AcceptedOrder.findByIdAndDelete(order.originalOrderId);
+      console.log(`🗑️ Original order deleted from AcceptedOrder: ${order.originalOrderId}`);
+    }
 
     await AcceptedByDelivery.findByIdAndDelete(orderId);
     console.log(`🗑️ Order deleted from AcceptedByDelivery: ${orderId}`);

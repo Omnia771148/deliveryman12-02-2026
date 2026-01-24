@@ -101,11 +101,15 @@ export async function POST(req) {
       }
     );
 
-    // 4️⃣ DELETE from acceptedorders (YOUR EXISTING LOGIC - UNCHANGED)
-    await AcceptedOrder.findByIdAndDelete(orderId);
+    // 4️⃣ UPDATE AcceptedOrder to mark as accepted (instead of deleting)
+    await AcceptedOrder.findByIdAndUpdate(orderId, {
+      deliveryBoyId,
+      status: "Accepted by Delivery"
+    });
+    // await AcceptedOrder.findByIdAndDelete(orderId); // Disabled as per request
 
     return NextResponse.json({
-      message: "Order accepted and removed from acceptedorders",
+      message: "Order accepted",
       success: true,
     });
 

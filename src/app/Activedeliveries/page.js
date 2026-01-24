@@ -287,6 +287,38 @@ export default function ActiveDeliveriesPage() {
                     >
                       {verifying ? "..." : "Verify"}
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("Delete from accepted orders?")) return;
+                        try {
+                          const res = await fetch("/api/delete-accepted-order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ orderId: delivery.originalOrderId })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            alert("Deleted from accepted orders");
+                          } else {
+                            alert("Failed: " + data.message);
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          alert("Error deleting");
+                        }
+                      }}
+                      style={{
+                        padding: "0 10px",
+                        backgroundColor: "#dc3545",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontSize: "12px"
+                      }}
+                    >
+                      Delete from Accepted
+                    </button>
                   </div>
                 </div>
               </div>

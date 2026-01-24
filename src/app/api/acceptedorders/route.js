@@ -6,7 +6,10 @@ export async function GET() {
   try {
     await connectionToDatabase();
 
-    const orders = await AcceptedOrder.find({}).lean();
+    // Filter out orders that are already accepted by a delivery boy
+    const orders = await AcceptedOrder.find({
+      $or: [{ deliveryBoyId: null }, { deliveryBoyId: "" }]
+    }).lean();
 
     return NextResponse.json(orders);
   } catch (err) {
