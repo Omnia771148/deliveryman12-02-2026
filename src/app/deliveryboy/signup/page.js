@@ -22,6 +22,7 @@ export default function DeliveryBoySignup() {
   const [otp, setOtp] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [isOtpSent, setIsOtpSent] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // NEW state for OTP sending button only (prevents full screen loader blocking ReCaptcha)
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -38,6 +39,8 @@ export default function DeliveryBoySignup() {
 
   const sendOtp = async (e) => {
     e.preventDefault();
+    setErrorMessage(""); // Clear previous errors
+
     if (!form.phone.trim().startsWith("+")) {
       alert("Please enter phone number with country code (e.g., +919876543210)");
       return;
@@ -72,6 +75,8 @@ export default function DeliveryBoySignup() {
     } catch (error) {
       console.error("OTP Error:", error);
 
+      let msg = "Failed to send OTP: " + (error.message || "Unknown error");
+
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear();
         window.recaptchaVerifier = null;
@@ -80,16 +85,19 @@ export default function DeliveryBoySignup() {
       }
 
       if (error.code === 'auth/captcha-check-failed') {
-        alert(`Firebase Error: Hostname match not found.\nYou are running on: ${window.location.hostname}\n\nPlease add "${window.location.hostname}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`);
+        const hostname = window.location.hostname;
+        msg = `HOSTNAME ERROR: Your current hostname "${hostname}" is not allowed. Go to Firebase Console -> Authentication -> Settings -> Authorized Domains and add "${hostname}".`;
       } else if (error.code === 'auth/invalid-phone-number') {
-        alert("The phone number is invalid. Format should be +919876543210");
+        msg = "The phone number is invalid. Format should be +919876543210";
       } else if (error.code === 'auth/invalid-app-credential') {
-        alert("Firebase Error: Invalid App Credential.\n\nPossible Causes:\n1. Phone Auth is NOT enabled in Firebase Console.\n2. API Key has 'HTTP Referrer' restrictions in Google Cloud Console preventing this domain.\n3. The reCAPTCHA token was rejected.");
+        msg = "Configuration Error: Phone Auth not enabled or API Key restricted. Check Firebase Console.";
       } else if (error.message && error.message.includes("restricted")) {
-        alert("This API key is restricted. Please check Google Cloud Console credentials restrictions.");
-      } else {
-        alert("Failed to send OTP: " + (error.message || "Unknown error"));
+        msg = "This API key is restricted. Please check Google Cloud Console credentials restrictions.";
       }
+
+      setErrorMessage(msg);
+      alert(msg);
+
     } finally {
       setIsSendingOtp(false); // Reset local state
     }
@@ -97,6 +105,7 @@ export default function DeliveryBoySignup() {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    setErrorMessage("");
 
     if (!selectedFiles.aadharUrl || !selectedFiles.rcUrl || !selectedFiles.licenseUrl) {
       alert("Please select all 3 photos!");
@@ -162,6 +171,12 @@ export default function DeliveryBoySignup() {
     <div style={{ maxWidth: 350, margin: "40px auto", padding: "20px", fontFamily: "sans-serif" }}>
       {isSubmitting && <Loading />}
       <div id="recaptcha-container"></div>
+
+      {errorMessage && (
+        <div style={{ padding: "15px", background: "#ffebee", border: "1px solid #f44336", color: "#d32f2f", borderRadius: "5px", marginBottom: "20px", fontSize: "14px", fontWeight: "bold" }}>
+          {errorMessage}
+        </div>
+      )}
 
       <h2>Delivery Boy Signup</h2>
 
