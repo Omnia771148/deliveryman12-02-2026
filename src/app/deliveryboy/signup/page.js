@@ -277,7 +277,7 @@ export default function DeliveryBoySignup() {
               />
 
               <input
-                type="file" accept="image/*" capture="environment"
+                type="file" accept="image/*"
                 onChange={(e) => handleFileChange(e, item.field)}
                 style={{ display: "block", marginTop: "5px" }}
               />
