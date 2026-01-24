@@ -120,7 +120,7 @@ export default function DeliveryBoySignup() {
         ))}
 
         <button type="submit" style={btnStyle} disabled={isSubmitting}>
-          {isSubmitting ? "Uploading & Saving..." : "Signup"}
+          {isSubmitting ? "Uploading & Saving..." : "Sige"}
         </button>
       </form>
     </div>
