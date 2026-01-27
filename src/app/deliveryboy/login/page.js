@@ -149,7 +149,7 @@ export default function Login() {
 
           {/* Forget Password */}
           <div className="forgot-password-container">
-            <button className="forgot-password-button">
+            <button className="forgot-password-button" onClick={() => window.location.href = "/deliveryboy/forgot-password"}>
               Forget password ?
             </button>
           </div>
