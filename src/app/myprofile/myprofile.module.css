@@ -1,0 +1,87 @@
+.pageContainer {
+    background-color: #F9F7F2;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-bottom: 100px;
+}
+
+.headerBanner {
+    background-color: #E2DCC8;
+    border-radius: 15px;
+}
+
+.logoCircle {
+    width: 50px;
+    height: 50px;
+    background-color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.logoText {
+    font-size: 20px;
+    font-weight: bold;
+    font-style: italic;
+    color: #333;
+}
+
+.headerTitle {
+    font-size: 14px;
+    color: #333;
+}
+
+.headerSubtitle {
+    font-size: 13px;
+    color: #666;
+}
+
+.settingPill {
+    border-radius: 50px;
+}
+
+.settingIcon {
+    font-size: 24px;
+    color: #999;
+}
+
+.settingText {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+}
+
+.mainCard {
+    background-color: #DCCFB7;
+    border-radius: 30px;
+}
+
+.menuItem {
+    border-radius: 50px;
+}
+
+.menuIcon {
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+.menuText {
+    font-size: 16px;
+    font-weight: 500;
+    color: #000;
+}
+
+.arrowIcon {
+    font-size: 24px;
+}
+
+.logoutButton {
+    background-color: #E74C3C;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 500;
+    color: white;
+}

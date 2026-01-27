@@ -23,7 +23,7 @@ export default function Login() {
 
       // CHANGED: Now comparing against oneDayInMs instead of sevenDays
       if (currentTime - loginTime < oneDayInMs) {
-        window.location.href = "/orderspage";
+        window.location.href = "/mainpage";
         return;
       } else {
         // Optional: Clear storage if the 1 day has passed
@@ -75,7 +75,7 @@ export default function Login() {
 
       setLoggedInUserId(matchedUser._id);
       alert("Login successful!");
-      window.location.href = "/orderspage";
+      window.location.href = "/mainpage";
     } else {
       alert("Incorrect phone or password");
     }

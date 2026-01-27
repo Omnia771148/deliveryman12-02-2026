@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Loading from "../loading/page";
+import BottomNav from "../components/BottomNav";
 
 export default function ActiveDeliveriesPage() {
   const [deliveries, setDeliveries] = useState([]);
@@ -326,6 +327,7 @@ export default function ActiveDeliveriesPage() {
           ))}
         </div>
       )}
+      <BottomNav />
     </div>
   );
 }

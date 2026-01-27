@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Loading from "../loading/page";
+import BottomNav from "../components/BottomNav";
 
-export default function CompletedOrdersPage() {
+export default function MyOrdersPage() {
     const [orders, setOrders] = useState([]);
     const [filteredOrders, setFilteredOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,8 +30,6 @@ export default function CompletedOrdersPage() {
             setLoading(true);
             const response = await fetch(`/api/complete-order?deliveryBoyId=${userId}`);
             const data = await response.json();
-
-            console.log("Completed Orders Response:", data);
 
             if (data.success) {
                 setOrders(data.data);
@@ -96,9 +95,9 @@ export default function CompletedOrdersPage() {
     }
 
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", maxWidth: "800px", margin: "0 auto" }}>
+        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", maxWidth: "800px", margin: "0 auto", paddingBottom: "80px" }}>
             <h1 style={{ fontSize: "24px", marginBottom: "20px", borderBottom: "1px solid #eee", paddingBottom: "10px", color: "#333" }}>
-                Completed Orders History
+                My Orders
             </h1>
 
             {/* Filter Buttons */}
@@ -237,6 +236,7 @@ export default function CompletedOrdersPage() {
                     ))}
                 </div>
             )}
+            <BottomNav />
         </div>
     );
 }
