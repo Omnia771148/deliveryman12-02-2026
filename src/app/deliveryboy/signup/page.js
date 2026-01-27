@@ -60,6 +60,8 @@ export default function DeliveryBoySignup() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
 
+  const [validationErrors, setValidationErrors] = useState({});
+
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
@@ -67,27 +69,54 @@ export default function DeliveryBoySignup() {
     }
   };
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    // Clear validation error when user types
+    if (validationErrors[e.target.name]) {
+      setValidationErrors({ ...validationErrors, [e.target.name]: "" });
+    }
+  };
 
   const sendOtp = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+    setValidationErrors({});
+
+    const errors = {};
+
+    // Phone validation
+    if (!/^\d{10}$/.test(form.phone)) {
+      errors.phone = "Please enter a valid 10-digit phone number.";
+    }
+
+    // Email validation
+    if (!form.email.endsWith("@gmail.com")) {
+      errors.email = "Email must end with @gmail.com";
+    }
+
+    // Password validation
+    const password = form.password;
+    if (password.length < 8) {
+      errors.password = "Password must be at least 8 characters long.";
+    } else if (!/[A-Z]/.test(password)) {
+      errors.password = "Password must contain at least one uppercase letter.";
+    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.password = "Password must contain at least one special character.";
+    }
 
     // Bank Details Validation
     if (!form.accountNumber || !form.confirmAccountNumber || !form.ifscCode) {
-      alert("Please fill in all bank details (Account Number & IFSC).");
+      // Just visual alert for bank details for now as per previous logic, or you can add specific error fields
+      // For this request, focused on Phone/Email visual feedback
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
 
     if (form.accountNumber !== form.confirmAccountNumber) {
       alert("Account numbers do not match! Please check and try again.");
-      return;
-    }
-
-    // Phone validation
-    if (!/^\d{10}$/.test(form.phone)) {
-      alert("Please enter a valid 10-digit phone number.");
       return;
     }
 
@@ -229,11 +258,16 @@ export default function DeliveryBoySignup() {
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                   setForm({ ...form, phone: val });
+                  if (validationErrors.phone) {
+                    setValidationErrors({ ...validationErrors, phone: "" });
+                  }
                 }}
-                className="custom-input"
+                className={`custom-input ${validationErrors.phone ? 'is-invalid' : ''}`}
+                style={validationErrors.phone ? { border: '1px solid red' } : {}}
                 required
               />
             </div>
+            {validationErrors.phone && <div style={{ color: 'red', fontSize: '12px', marginTop: '-15px', marginBottom: '15px' }}>{validationErrors.phone}</div>}
 
             <div className="custom-input-group">
               <MailIcon />
@@ -241,11 +275,13 @@ export default function DeliveryBoySignup() {
                 name="email"
                 placeholder="Delivery partner Mail"
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="custom-input"
+                onChange={handleChange}
+                className={`custom-input ${validationErrors.email ? 'is-invalid' : ''}`}
+                style={validationErrors.email ? { border: '1px solid red' } : {}}
                 required
               />
             </div>
+            {validationErrors.email && <div style={{ color: 'red', fontSize: '12px', marginTop: '-15px', marginBottom: '15px' }}>{validationErrors.email}</div>}
 
             <div className="custom-input-group">
               <LockIcon />
@@ -254,10 +290,12 @@ export default function DeliveryBoySignup() {
                 type="password"
                 placeholder="Password"
                 onChange={handleChange}
-                className="custom-input"
+                className={`custom-input ${validationErrors.password ? 'is-invalid' : ''}`}
+                style={validationErrors.password ? { border: '1px solid red' } : {}}
                 required
               />
             </div>
+            {validationErrors.password && <div style={{ color: 'red', fontSize: '12px', marginTop: '-15px', marginBottom: '15px' }}>{validationErrors.password}</div>}
 
             {/* Bank Details Section */}
             <div className="section-divider">
