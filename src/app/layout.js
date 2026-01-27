@@ -1,6 +1,7 @@
 import Link from "next/link"; // Not used but good practice
 import Script from "next/script"; // Not used but good practice
 import { Geist, Geist_Mono } from "next/font/google";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 
 const geistSans = Geist({
