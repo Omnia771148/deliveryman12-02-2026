@@ -2,7 +2,7 @@
 const nextConfig = {
   /* config options here */
   reactStrictMode: false, // Disabled to prevent double-initialization of ReCaptcha during dev
-  reactCompiler: true,
+  // reactCompiler: true,
 };
 
 export default nextConfig;

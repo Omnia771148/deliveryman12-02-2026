@@ -1,8 +1,9 @@
-import Link from "next/link"; // Not used but good practice
-import Script from "next/script"; // Not used but good practice
+import Link from "next/link";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
+import SWRegister from "./components/SWRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Delivery Partner App",
   description: "Delivery Partner Application",
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#8936FF",
 };
 
 export default function RootLayout({ children }) {
@@ -36,6 +42,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <SWRegister />
         {children}
         <Script
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
