@@ -36,7 +36,19 @@ export async function POST(req) {
             tokens: tokens,
         };
 
-        const response = await admin.messaging().sendMulticast(message);
+        // Send Multicast Notification
+        // Firebase Admin SDK v11+ prefers sendEachForMulticast
+        let response;
+        try {
+            response = await admin.messaging().sendEachForMulticast(message);
+        } catch (subError) {
+            console.warn("sendEachForMulticast failed, trying sendMulticast", subError);
+            if (admin.messaging().sendMulticast) {
+                response = await admin.messaging().sendMulticast(message);
+            } else {
+                throw subError;
+            }
+        }
 
         return NextResponse.json({
             success: true,

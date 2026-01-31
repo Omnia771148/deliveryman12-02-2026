@@ -101,12 +101,31 @@ export async function POST(req) {
       }
     );
 
-    // 4️⃣ UPDATE AcceptedOrder to mark as accepted (instead of deleting)
+    // 4️⃣ UPDATE AcceptedOrder to mark as accepted
     await AcceptedOrder.findByIdAndUpdate(orderId, {
       deliveryBoyId,
       status: "Accepted by Delivery"
     });
-    // await AcceptedOrder.findByIdAndDelete(orderId); // Disabled as per request
+
+    // 🔔 5️⃣ NOTIFICATION TRIGGER: Alert all OTHER delivery boys that an order was taken? 
+    // OR: Did the user mean "When RESTAURANT accepts order, notify delivery boys"?
+    // The user said: "when accepted orders get order all the delivery boys who are active should get notifications"
+    // "Accepted Orders" usually means "Restaurant Accepted".
+    // "Get order" might mean "Order arrives in the accepted list".
+    // 
+    // IF this route is "Delivery Boy Accepts Order", then we might want to notify the USER that "Delivery Boy is coming".
+
+    // BUT, the prompt says "when accepted orders get order". This implies when the order moves TO 'acceptedorders'.
+    // That happens in a DIFFERENT route (Restaurant Accept).
+
+    // HOWEVER, if the user means: "When a delivery boy accepts an order, notify others (maybe to remove it from their list?)"
+    // 
+    // Let's look at the user request again: "when accepted orders get order all the delivery boys who are active should get notifications"
+    // This sounds like: Restaurant Accepts -> Order moves to 'acceptedorders' -> Notify Delivery Boys "New Order Available".
+
+    // I am currently in 'acceptedorders/accept/route.js'. This route is called when a DELIVERY BOY accepts the order.
+    // So this is NOT the place to notify delivery boys about a new order. 
+    // This is the place to notify the Customer.
 
     return NextResponse.json({
       message: "Order accepted",
