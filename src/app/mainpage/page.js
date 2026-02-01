@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import BottomNav from "../components/BottomNav";
+// import BottomNav from "../components/BottomNav";
 
 export default function MainPage() {
     const router = useRouter();
@@ -267,7 +267,7 @@ export default function MainPage() {
 
             {/* Bottom Navigation */}
             {/* Bottom Navigation */}
-            <BottomNav />
+            {/* <BottomNav /> */}
 
         </div>
     );

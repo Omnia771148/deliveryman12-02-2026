@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import BottomNav from "../components/BottomNav";
+// import BottomNav from "../components/BottomNav";
 import styles from "./myprofile.module.css";
 
 export default function MyProfileMenu() {
@@ -35,7 +35,7 @@ export default function MyProfileMenu() {
         router.push("/deliveryboy/login");
     };
 
-   
+
     return (
         <div className={styles.pageContainer}>
 
@@ -109,7 +109,7 @@ export default function MyProfileMenu() {
                 </div>
 
             </div>
-            <BottomNav />
+            {/* <BottomNav /> */}
         </div>
     );
 }

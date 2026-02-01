@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Loading from "../loading/page";
-import BottomNav from "../components/BottomNav";
+// import BottomNav from "../components/BottomNav";
 
 export default function MyOrdersPage() {
     const [orders, setOrders] = useState([]);
@@ -236,7 +236,7 @@ export default function MyOrdersPage() {
                     ))}
                 </div>
             )}
-            <BottomNav />
+            {/* <BottomNav /> */}
         </div>
     );
 }

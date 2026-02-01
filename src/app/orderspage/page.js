@@ -1,8 +1,8 @@
-  "use client";
+"use client";
 import { useEffect, useState, useCallback } from "react";
 import Loading from "../loading/page";
 import AuthWrapper from "../components/AuthWrapper";
-import BottomNav from "../components/BottomNav";
+// import BottomNav from "../components/BottomNav";
 import Link from "next/link"; // Added for redirecting to mainpage if needed
 
 export default function AcceptedOrders() {
@@ -505,7 +505,7 @@ export default function AcceptedOrders() {
           )}
         </div>
       </div>
-      <BottomNav />
+      {/* <BottomNav /> */}
     </AuthWrapper>
   );
 }

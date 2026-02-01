@@ -1,0 +1,34 @@
+"use client";
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import "./Navbar.css";
+
+const Navbar = () => {
+    const pathname = usePathname();
+
+    // Navigation Items according to the requirement and image order:
+    // 1. Home (House)
+    // 2. Map (Folded Map / Location)
+    // 3. Bag (Shopping Bag)
+    // 4. Profile (Person)
+
+    const navItems = [
+        { name: 'Home', path: '/mainpage', icon: 'bi-house-fill' },
+        { name: 'Bag', path: '/orderspage', icon: 'bi-bag-fill' },
+        { name: 'Map', path: '/Activedeliveries', icon: 'bi-map-fill' },
+        { name: 'Profile', path: '/myprofile', icon: 'bi-person-fill' },
+    ];
+
+    return (
+        <div className="navbarContainer">
+            {navItems.map((item, index) => (
+                <Link key={index} href={item.path} className="navItem">
+                    <i className={`bi ${item.icon} navIcon`}></i>
+                </Link>
+            ))}
+        </div>
+    );
+};
+
+export default Navbar;

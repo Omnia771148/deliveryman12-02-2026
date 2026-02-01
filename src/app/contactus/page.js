@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import BottomNav from "../components/BottomNav";
+// import BottomNav from "../components/BottomNav";
 
 export default function ContactUs() {
     return (
@@ -113,7 +113,7 @@ export default function ContactUs() {
                 </a>
 
             </div>
-            <BottomNav />
+            {/* <BottomNav /> */}
         </div>
     );
 }

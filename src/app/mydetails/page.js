@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import BottomNav from "../components/BottomNav";
+// import BottomNav from "../components/BottomNav";
 import Loading from "../loading/page";
 
 export default function MyDetails() {
@@ -121,7 +121,7 @@ export default function MyDetails() {
                 </p>
 
             </div>
-            <BottomNav />
+            {/* <BottomNav /> */}
         </div>
     );
 }
