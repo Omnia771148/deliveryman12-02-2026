@@ -3,8 +3,10 @@ import { useEffect, useState, useCallback } from "react";
 import Loading from "../loading/page";
 import AuthWrapper from "../components/AuthWrapper";
 import "./orderspage.css";
+import "./modal.css";
 // import BottomNav from "../components/BottomNav";
 import Link from "next/link"; // Added for redirecting to mainpage if needed
+import { useRouter } from "next/navigation";
 
 export default function AcceptedOrders() {
   const [orders, setOrders] = useState([]);
@@ -106,24 +108,49 @@ export default function AcceptedOrders() {
     };
   }, [fetchOrders]);
 
+  // Modal State
+  const [modal, setModal] = useState({
+    show: false,
+    type: "success", // 'success' or 'error'
+    title: "",
+    message: "",
+    onConfirm: null, // Function on button click
+  });
+
+  const closeModal = () => {
+    setModal({ ...modal, show: false });
+  };
+
+  const showModal = (type, title, message, onConfirm = null) => {
+    setModal({
+      show: true,
+      type,
+      title,
+      message,
+      onConfirm: onConfirm || (() => setModal(prev => ({ ...prev, show: false }))),
+    });
+  };
+
   // ✅ FIRST CODE'S ACCEPT ORDER
+  const router = useRouter();
+
   const acceptOrderFirst = async (orderId) => {
     const deliveryBoyId = localStorage.getItem("userId");
 
     if (!deliveryBoyId) {
-      alert("Login expired");
+      showModal("error", "Login Expired", "Please login again.");
       return;
     }
 
     // Check if delivery boy is active
     if (!isActive) {
-      alert("You must be Active to accept orders!");
+      showModal("error", "Inactive Status", "You must be Active to accept orders!");
       return;
     }
 
     // LOGIC FROM FIRST: Prevent acceptance if already busy
     if (hasActiveDelivery || hasActiveOrder) {
-      alert("Finish your active order first!");
+      showModal("error", "Busy", "Finish your active order first!");
       return;
     }
 
@@ -136,21 +163,25 @@ export default function AcceptedOrders() {
       const serverData = await res.json();
       if (!res.ok) {
         // If the server sends 409 (Conflict), serverData.message will be "Too late!..."
-        alert(serverData.message);
-
-        // Remove from list immediately so the boy doesn't try again
-        setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
+        showModal("error", "Failed", serverData.message, () => {
+          // Remove from list immediately so the boy doesn't try again
+          setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
+          closeModal();
+        });
         return;
       }
-
 
       // Update both orders states
       setOrders((prev) => prev.filter((o) => o._id !== orderId));
       setFilteredOrders((prev) => prev.filter((o) => o._id !== orderId));
-      alert("Order accepted successfully");
+
+      showModal("success", "Success!", "Order accepted successfully", () => {
+        router.push("/Activedeliveries");
+      });
+
     } catch (err) {
       console.error(err);
-      alert("Something went wrong");
+      showModal("error", "Error", "Something went wrong");
     }
   };
 
@@ -159,7 +190,7 @@ export default function AcceptedOrders() {
     const deliveryBoyId = localStorage.getItem("userId");
 
     if (!deliveryBoyId) {
-      alert("Login expired");
+      showModal("error", "Login Expired", "Please login again.");
       return;
     }
 
@@ -267,7 +298,7 @@ export default function AcceptedOrders() {
                     <div className="row-label">Distance</div>
                     <div className="row-separator">-</div>
                     <div className="row-value">
-                      {order.distance ? `${order.distance} km` : "4.6 km"}
+                      {order.location?.distanceText}
                     </div>
                   </div>
 
@@ -275,7 +306,7 @@ export default function AcceptedOrders() {
                     <div className="row-label">Delivery fee</div>
                     <div className="row-separator">-</div>
                     <div className="row-value">
-                      {order.deliveryCharge ? `${order.deliveryCharge} Rs` : "30 Rs"}
+                      {order.deliveryCharge && `₹ ${order.deliveryCharge} `}
                     </div>
                   </div>
 
@@ -301,6 +332,25 @@ export default function AcceptedOrders() {
           </div>
         )}
       </div>
+
+      {/* CUSTOM MODAL */}
+      {modal.show && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className={`modal-icon ${modal.type === 'success' ? 'icon-success' : 'icon-error'}`}>
+              <span className="icon-content">
+                {modal.type === 'success' ? '✓' : '✕'}
+              </span>
+            </div>
+            <h3 className="modal-title">{modal.title}</h3>
+            <p className="modal-message">{modal.message}</p>
+            <button className="modal-button" onClick={modal.onConfirm}>
+              {modal.type === 'success' ? 'Continue' : 'Close'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* <BottomNav /> */}
     </AuthWrapper>
   );

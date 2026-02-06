@@ -13,6 +13,7 @@ const LocationSchema = new mongoose.Schema({
   lat: Number,
   lng: Number,
   mapUrl: String,
+  distanceText: String,
 });
 
 const AcceptedOrderSchema = new mongoose.Schema({
