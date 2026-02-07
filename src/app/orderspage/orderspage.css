@@ -6,6 +6,8 @@
     padding-bottom: 80px;
     /* Space for bottom nav */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
 }
 
 .spv-header {
@@ -128,14 +130,15 @@
     justify-content: center;
     padding: 4rem 2rem;
     margin: 20px;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background-color: #E3D5C2;
+    /* Updated to earthy tan */
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-    min-height: 300px;
+    border: none;
+    box-shadow: none;
+    flex-grow: 1;
+    /* Take remaining height */
     text-align: center;
+    color: #333;
 }
 
 .empty-state-icon {

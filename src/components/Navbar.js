@@ -7,9 +7,12 @@ import "./Navbar.css";
 const Navbar = () => {
     const pathname = usePathname();
 
-    const hiddenRoutes = ['/deliveryboy/login', '/deliveryboy/signup', '/deliveryboy/forgot-password'];
+    const hiddenRoutes = ['/', '/deliveryboy/login', '/deliveryboy/signup', '/deliveryboy/forgot-password'];
 
-    if (hiddenRoutes.includes(pathname)) {
+    // Check if the current pathname matches any hidden route, allowing for optional trailing slash
+    const isHidden = hiddenRoutes.some(route => pathname === route || pathname === `${route}/`);
+
+    if (isHidden) {
         return null;
     }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Loading from "../loading/page";
 // import BottomNav from "../components/BottomNav";
+import "./activedeliveries.css";
 
 export default function ActiveDeliveriesPage() {
   const [deliveries, setDeliveries] = useState([]);
@@ -13,6 +14,14 @@ export default function ActiveDeliveriesPage() {
 
   // State to manage which view is active for each delivery card: 'restaurant' (default) or 'user'
   const [viewMode, setViewMode] = useState({});
+
+  // Custom Modal State
+  const [modal, setModal] = useState({
+    show: false,
+    message: "",
+    title: "",
+    type: "success" // 'success' or 'error'
+  });
 
   useEffect(() => {
     // Get delivery boy ID from localStorage
@@ -91,7 +100,9 @@ export default function ActiveDeliveriesPage() {
   };
 
   const verifyRazorpayId = async (delivery) => {
-    const userInput = inputValues[delivery._id] || "";
+    // Remove spaces from the input value for verification
+    const rawInput = inputValues[delivery._id] || "";
+    const userInput = rawInput.replace(/\s/g, "");
     const razorpayOrderId = delivery.razorpayOrderId;
 
     if (!razorpayOrderId) {
@@ -99,47 +110,84 @@ export default function ActiveDeliveriesPage() {
       return;
     }
 
-    const last5Digits = razorpayOrderId.slice(-5);
+    if (userInput.length < 5) {
+      alert("Please enter the last 5 characters of the Order ID");
+      return;
+    }
 
-    if (userInput === last5Digits) {
-      try {
-        setVerifying(true);
+    setVerifying(true);
 
-        const response = await fetch("/api/complete-order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orderId: delivery._id
-          }),
+    try {
+      const last5Digits = razorpayOrderId.slice(-5);
+
+      if (userInput === last5Digits) {
+        // Correct ID - Complete Order
+        await handleCompleteOrder(delivery);
+      } else {
+        setModal({
+          show: true,
+          title: "Invalid ID",
+          message: "The digits you entered are incorrect. Please check and retry.",
+          type: "error"
         });
-
-        const result = await response.json();
-
-        if (result.success) {
-          alert(`✅ Verification successful!\nOrder completed and moved to completed orders.\nTotal Amount: ₹${result.data.grandTotal}`);
-
-          setDeliveries(prev => prev.filter(item => item._id !== delivery._id));
-
-          setInputValues(prev => {
-            const newValues = { ...prev };
-            delete newValues[delivery._id];
-            return newValues;
-          });
-        } else {
-          alert(`❌ Failed: ${result.message}`);
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        alert("Failed to complete order. Please try again.");
-      } finally {
-        setVerifying(false);
       }
-    } else {
-      alert(`❌ Incorrect! Last 5 digits are: ${last5Digits}`);
+    } catch (error) {
+      console.error("Verification error:", error);
+      setModal({
+        show: true,
+        title: "Error",
+        message: "Something went wrong during verification. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setVerifying(false); // Enable the button again
     }
   };
+
+  const handleCompleteOrder = async (delivery) => {
+    try {
+      // API call to complete order (Final step)
+      const response = await fetch("/api/complete-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: delivery._id // AcceptedByDelivery ID
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setModal({
+          show: true,
+          title: "Order Completed",
+          message: "Order has been moved to completed status.",
+          type: "success"
+        });
+        // Remove from UI immediately
+        setDeliveries(prev => prev.filter(item => item._id !== delivery._id));
+        // Refresh list as well just in case
+        fetchDeliveriesApproach1(deliveryBoyId);
+        fetchDeliveriesApproach2(deliveryBoyId);
+      } else {
+        setModal({
+          show: true,
+          title: "Failed",
+          message: data.message || "Could not complete order.",
+          type: "error"
+        });
+      }
+
+    } catch (error) {
+      console.error("Complete order error:", error);
+      setModal({
+        show: true,
+        title: "Error",
+        message: "Network error occurred while completing the order.",
+        type: "error"
+      });
+    }
+  };
+
 
   if (loading) {
     return <Loading />;
@@ -154,103 +202,101 @@ export default function ActiveDeliveriesPage() {
   }
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", maxWidth: "800px", margin: "0 auto" }}>
-      <h1 style={{ fontSize: "24px", marginBottom: "20px", borderBottom: "1px solid #eee", paddingBottom: "10px", color: "#333" }}>
-        My Deliveries
-      </h1>
+    <div className="ad-page-container">
+      {/* Header */}
+      <div className="ad-header">
+        <div className="ad-header-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🛵</div>
+        <div>
+          <div className="ad-title">Active Deliveries</div>
+          <div className="ad-header-text">Manage your ongoing tasks</div>
+        </div>
+      </div>
 
       {deliveries.length === 0 ? (
-        <div style={{
-          textAlign: "center",
-          padding: "40px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "8px",
-          color: "#6c757d",
-          border: "1px dashed #dee2e6"
-        }}>
-          No active deliveries found.
+        <div className="ad-no-orders">
+          <div style={{ fontSize: "60px", marginBottom: "15px", opacity: 0.5 }}>�</div>
+          <h3 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>No Active Deliveries</h3>
+          <p style={{ opacity: 0.8 }}>You have no ongoing deliveries at the moment.</p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
           {deliveries.map((delivery) => {
             const isUserView = viewMode[delivery._id] === 'user' || delivery.orderPickedUp;
 
             return (
-              <div
-                key={delivery._id}
-                style={{
-                  border: "1px solid #e1e4e8",
-                  borderRadius: "12px",
-                  backgroundColor: "#fff",
-                  boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
-                  overflow: "hidden"
-                }}
-              >
+              <div key={delivery._id} className="ad-card">
+
                 {/* 
-                   VIEW 1: RESTAURANT & ITEMS
+                   VIEW 1: RESTAURANT & ITEMS (The Main View)
                    Shows when viewMode is NOT 'user'
                 */}
                 {!isUserView && (
-                  <div style={{ padding: "20px" }}>
-                    <div style={{ marginBottom: "15px", borderBottom: "1px solid #eee", paddingBottom: "10px" }}>
-                      <p style={{ margin: "0 0 5px 0", fontSize: "14px", fontWeight: "bold", color: "#e67e22" }}>
-                        Order ID: {delivery.orderId}
-                      </p>
-                      <h2 style={{ margin: "0 0 5px 0", fontSize: "20px", color: "#2c3e50" }}>
-                        {delivery.rest || delivery.restaurantName || "Restaurant Name Not Available"}
-                      </h2>
-                      <a
-                        href={delivery.location?.mapUrl || delivery.rest || `https://www.google.com/maps/search/?api=1&query=${delivery.location?.lat},${delivery.location?.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          marginTop: "5px",
-                          color: "#007bff",
-                          fontSize: "14px",
-                          textDecoration: "none",
-                          fontWeight: "500",
-                          backgroundColor: "#e7f1ff",
-                          padding: "5px 10px",
-                          borderRadius: "20px"
-                        }}
-                      >
-                        <span style={{ marginRight: "4px" }}>📍</span> View Restaurant Location
-                      </a>
-                    </div>
+                  <>
+                    <div className="ad-card-content">
+                      {/* Left Column: Essential Details */}
+                      <div className="ad-main-details">
+                        <div>
+                          <div className="ad-order-id">
+                            <span>Order ID</span>
+                            <div className="ad-order-value">{delivery.orderId}</div>
+                          </div>
 
-                    <div style={{ marginBottom: "15px" }}>
-                      <h4 style={{ fontSize: "16px", color: "#333", marginBottom: "10px" }}>Items to Pick Up:</h4>
-                      <div style={{ backgroundColor: "#f8f9fa", borderRadius: "8px", padding: "10px" }}>
-                        {delivery.items && delivery.items.length > 0 ? (
-                          <ul style={{ margin: 0, paddingLeft: "20px" }}>
-                            {delivery.items.map((item, idx) => (
-                              <li key={idx} style={{ marginBottom: "5px", fontSize: "15px", color: "#555" }}>
-                                <span style={{ fontWeight: "bold", color: "#333" }}>{item.quantity} x </span>
-                                {item.name}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p style={{ margin: 0, color: "#999", fontStyle: "italic" }}>No item details available. {delivery.totalCount ? `(${delivery.totalCount} items)` : ""}</p>
-                        )}
+                          <div className="ad-restaurant-section">
+                            <div className="ad-restaurant-name">
+                              {delivery.restaurantName || "Restaurant Name Not Available"}
+                            </div>
+
+                            <a
+                              href={delivery.rest}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ad-location-badge"
+                              style={{ marginTop: '5px', display: 'inline-flex', alignItems: 'center' }}
+                            >
+                              <span style={{ marginRight: '5px' }}>📍</span> VIEW IN MAP
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="ad-earnings">
+                          <span>DELIVERY FEE</span>
+                          <div className="ad-earnings-amount">₹{delivery.deliveryCharge || 0}</div>
+                        </div>
+                      </div>
+
+                      {/* Right Column: Items List */}
+                      <div className="ad-items-column">
+                        <div className="ad-items-title">ITEMS TO PICKUP</div>
+                        <div className="ad-items-list">
+                          {delivery.items && delivery.items.length > 0 ? (
+                            delivery.items.map((item, idx) => (
+                              <div key={idx} className="ad-item-row">
+                                <span className="ad-item-name">{item.name}</span>
+                                <span className="ad-item-qty">x{item.quantity}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="ad-item-row" style={{ fontStyle: "italic", opacity: 0.7 }}>
+                              {delivery.totalCount ? `${delivery.totalCount} items` : "No item details"}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", padding: "10px", backgroundColor: "#e8f5e9", borderRadius: "8px", border: "1px solid #c3e6cb" }}>
-                      <span style={{ color: "#155724", fontWeight: "600" }}>Delivery Earnings:</span>
-                      <span style={{ fontSize: "18px", fontWeight: "bold", color: "#28a745" }}>₹{delivery.deliveryCharge || 0}</span>
-                    </div>
-
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    {/* Footer with Button */}
+                    <div className="ad-card-footer">
                       <button
+                        className="ad-btn-pickup"
                         onClick={async () => {
                           try {
                             const res = await fetch("/api/delete-accepted-order", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ orderId: delivery.originalOrderId })
+                              body: JSON.stringify({
+                                orderId: delivery.originalOrderId,
+                                deliveryId: delivery._id
+                              })
                             });
 
                             const data = await res.json();
@@ -258,138 +304,136 @@ export default function ActiveDeliveriesPage() {
                               setViewMode(prev => ({ ...prev, [delivery._id]: 'user' }));
                             } else {
                               console.error("Failed:", data.message);
-                              // Still switch view if it fails? No, probably should stay. 
-                              // But user said "It is not deleting". If API fails, we should probably let them know or retry.
-                              // We will stick to simple: specific error => alert.
                               alert(data.message);
                             }
                           } catch (err) {
                             console.error("Error:", err);
                           }
                         }}
-                        style={{
-                          flex: 1,
-                          padding: "12px",
-                          backgroundColor: "#dc3545",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "8px",
-                          fontWeight: "600",
-                          fontSize: "16px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px"
-                        }}
                       >
-                        Delete from Accepted
+                        PICKUP ORDER
                       </button>
                     </div>
-                  </div>
+                  </>
                 )}
 
                 {/* 
-                   VIEW 2: CUSTOMER DETAILS & VERIFY
+                   VIEW 2: USER DETAILS & VERIFY
                    Shows when viewMode IS 'user'
                 */}
                 {isUserView && (
-                  <div style={{ padding: "20px" }}>
-                    {!delivery.orderPickedUp && (
-                      <button
-                        onClick={() => setViewMode(prev => ({ ...prev, [delivery._id]: 'restaurant' }))}
-                        style={{ background: "none", border: "none", color: "#666", marginBottom: "15px", cursor: "pointer", fontSize: "14px", padding: 0 }}
-                      >
-                        ← Back to Order Details
-                      </button>
-                    )}
+                  <div className="ad-user-view-container">
 
-                    <h3 style={{ fontSize: "18px", borderBottom: "1px solid #eee", paddingBottom: "10px", marginBottom: "15px" }}>Customer Details</h3>
 
-                    <div style={{ display: "grid", gap: "10px", marginBottom: "20px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#888", fontSize: "13px" }}>Name:</span>
-                        <span style={{ fontWeight: "600", color: "#333" }}>{delivery.userName || "Test User"}</span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#888", fontSize: "13px" }}>Phone:</span>
-                        <span style={{ fontWeight: "600", color: "#007bff" }}>
-                          <a href={`tel:${delivery.userPhone || '9999999999'}`} style={{ color: "inherit", textDecoration: "none" }}>{delivery.userPhone || "9999999999"}</a>
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#888", fontSize: "13px" }}>Email:</span>
-                        <span style={{ fontWeight: "600", color: "#333", fontSize: "13px" }}>{delivery.userEmail || "test@kushas.com"}</span>
+                    <div style={{ marginBottom: "20px" }}>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '15px', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '5px' }}>Customer Details</h3>
+
+                      <div className="ad-customer-details">
+                        <div className="ad-detail-row">
+                          <span className="ad-detail-label">Name:</span>
+                          <span style={{ fontWeight: 'bold' }}>{delivery.userName || "Customer"}</span>
+                        </div>
+                        <div className="ad-detail-row">
+                          <span className="ad-detail-label">Phone:</span>
+                          <span>
+                            <a href={`tel:${delivery.userPhone}`} style={{ color: "inherit", textDecoration: "none", fontWeight: 'bold' }}>{delivery.userPhone || "N/A"}</a>
+                          </span>
+                        </div>
+                        <div className="ad-detail-row">
+                          <span className="ad-detail-label">Address:</span>
+                          <span style={{ flex: 1, fontSize: '0.95rem' }}>
+                            {typeof delivery.deliveryAddress === 'string' ? delivery.deliveryAddress : (delivery.deliveryAddress?.street || "Address not provided")}
+                          </span>
+                        </div>
+
+                        {delivery.location && (delivery.location.lat || delivery.location.lng) && (
+                          <div style={{ marginTop: '15px', textAlign: 'center' }}>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${delivery.location.lat},${delivery.location.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ad-location-badge"
+                              style={{ backgroundColor: '#e8f5e9', color: '#2e7d32', display: 'inline-flex', alignItems: 'center' }}
+                            >
+                              <span style={{ marginRight: '5px' }}>📍</span> Open Customer Map
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div style={{ backgroundColor: "#f1f3f5", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
-                      <h4 style={{ fontSize: "14px", color: "#555", marginBottom: "8px", fontWeight: "bold" }}>Delivery Location</h4>
-                      <p style={{ margin: "0 0 5px 0", fontSize: "14px", color: "#333" }}>
-                        {typeof delivery.deliveryAddress === 'string' ? delivery.deliveryAddress : (delivery.deliveryAddress?.street || "Address not provided")}
-                      </p>
-
-                      {delivery.location && (
-                        <div style={{ fontSize: "13px", color: "#666", marginTop: "5px" }}>
-                          {delivery.location.flatNo && <div>Flat/House: {delivery.location.flatNo}</div>}
-                          {delivery.location.street && <div>Street: {delivery.location.street}</div>}
-                          {delivery.location.landmark && <div>Landmark: {delivery.location.landmark}</div>}
-                        </div>
-                      )}
-
-                      {delivery.location && (delivery.location.lat || delivery.location.lng) && (
-                        <div style={{ marginTop: "10px" }}>
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${delivery.location.lat},${delivery.location.lng}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: "#e74c3c", fontWeight: "600", fontSize: "13px", textDecoration: "none" }}
-                          >
-                            <span style={{ marginRight: "5px" }}>📍</span> Open in Maps ({Number(delivery.location.lat).toFixed(4)}, {Number(delivery.location.lng).toFixed(4)})
-                          </a>
-                        </div>
-                      )}
-                      {!delivery.location && (
-                        <div style={{ fontSize: "13px", color: "#999", marginTop: "5px" }}>Location Coordinates Unavailable</div>
-                      )}
-                    </div>
-
-                    <div style={{ backgroundColor: "#e8f4fd", padding: "15px", borderRadius: "8px", border: "1px solid #b6d4fe" }}>
-                      <label style={{ display: "block", marginBottom: "10px", color: "#004085", fontSize: "14px", fontWeight: "600" }}>
-                        Verify Delivery (Last 5 digits)
+                    <div className="ad-verify-box">
+                      <label className="ad-verify-title">
+                        Verify Delivery (Last 5 Digits)
                       </label>
-                      <div style={{ display: "flex", gap: "10px" }}>
-                        <input
-                          type="text"
-                          value={inputValues[delivery._id] || ""}
-                          onChange={(e) => handleInputChange(delivery._id, e.target.value)}
-                          placeholder="Ex: 54321"
-                          maxLength="5"
-                          style={{
-                            flex: 1,
-                            padding: "10px",
-                            border: "1px solid #ced4da",
-                            borderRadius: "6px",
-                            fontSize: "16px",
-                            outline: "none"
-                          }}
-                        />
+                      <div className="ad-verify-controls">
+                        <div className="ad-otp-container">
+                          {[0, 1, 2, 3, 4].map((index) => {
+                            const fullStr = inputValues[delivery._id] || "     ";
+                            const paddedStr = fullStr.padEnd(5, " ");
+                            const char = paddedStr[index] === " " ? "" : paddedStr[index];
+
+                            return (
+                              <input
+                                key={index}
+                                id={`otp-${delivery._id}-${index}`}
+                                type="text"
+                                className="ad-otp-input"
+                                maxLength={1}
+                                value={char}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => {
+                                  const val = e.target.value.toUpperCase();
+
+                                  const digit = val.slice(-1);
+
+                                  const current = inputValues[delivery._id] || "     ";
+                                  const currentArr = current.padEnd(5, " ").split("");
+                                  currentArr[index] = digit === "" ? " " : digit;
+
+                                  const finalStr = currentArr.join("").slice(0, 5);
+                                  handleInputChange(delivery._id, finalStr);
+
+                                  if (digit && index < 4) {
+                                    const nextInput = document.getElementById(`otp-${delivery._id}-${index + 1}`);
+                                    if (nextInput) nextInput.focus();
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Backspace") {
+                                    if (!char && index > 0) {
+                                      e.preventDefault();
+                                      const current = inputValues[delivery._id] || "     ";
+                                      const currentArr = current.padEnd(5, " ").split("");
+                                      // Clear PREVIOUS slot
+                                      currentArr[index - 1] = " ";
+                                      handleInputChange(delivery._id, currentArr.join("").slice(0, 5));
+
+                                      const prevInput = document.getElementById(`otp-${delivery._id}-${index - 1}`);
+                                      if (prevInput) prevInput.focus();
+                                    } else if (char) {
+                                      // If current has char, verify logic:
+                                      // Default behavior deletes char. 
+                                      // We should update state to reflect empty at this index.
+                                      // But onChange usually captures the "empty" state if we allow it?
+                                      // Wait, standard backspace on non-empty input triggers onChange with empty string if maxLength=1?
+                                      // YES. So we strictly need to handle STATE update here manually or rely on onChange?
+                                      // onChange will fire with "" if we delete.
+                                      // So let's leave char deletion to onChange.
+                                    }
+                                  }
+                                }}
+                                placeholder="-"
+                              />
+                            );
+                          })}
+                        </div>
                         <button
+                          className="ad-btn-verify"
                           onClick={() => verifyRazorpayId(delivery)}
                           disabled={verifying}
-                          style={{
-                            padding: "0 20px",
-                            backgroundColor: "#28a745",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "6px",
-                            fontWeight: "600",
-                            cursor: verifying ? "wait" : "pointer",
-                            opacity: verifying ? 0.7 : 1,
-                            transition: "background-color 0.2s"
-                          }}
                         >
-                          {verifying ? "..." : "Verify"}
+                          {verifying ? "..." : "COMPLETE"}
                         </button>
                       </div>
                     </div>
@@ -401,6 +445,108 @@ export default function ActiveDeliveriesPage() {
         </div>
       )}
       {/* <BottomNav /> */}
+      {/* Custom Alert Modal */}
+      {modal.show && (
+        <div className="ad-modal-overlay">
+          <div className="ad-modal-card">
+            <div className={`ad-modal-icon-circle ${modal.type}`}>
+              {modal.type === "success" ? "✓" : "✕"}
+            </div>
+
+            <div className="ad-modal-content">
+              <h3 className="ad-modal-title">{modal.title}</h3>
+              <p className="ad-modal-message">{modal.message}</p>
+
+              <button
+                className="ad-modal-btn"
+                onClick={() => setModal({ ...modal, show: false })}
+              >
+                {modal.type === "success" ? "Continue" : "Retry"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approach for spacing if needed */}
+      <style jsx>{`
+        .ad-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(2px);
+        }
+        .ad-modal-card {
+           background: white;
+           width: 85%;
+           max-width: 320px;
+           border-radius: 20px;
+           padding: 30px 20px;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+           animation: adPopIn 0.3s ease-out;
+        }
+        .ad-modal-icon-circle {
+           width: 70px;
+           height: 70px;
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: 30px;
+           color: white;
+           font-weight: bold;
+           margin-bottom: 20px;
+        }
+        .ad-modal-icon-circle.success {
+           background-color: #4CAF50;
+        }
+        .ad-modal-icon-circle.error {
+           background-color: #f44336;
+        }
+        .ad-modal-content {
+           text-align: center;
+        }
+        .ad-modal-title {
+           font-size: 1.4rem;
+           font-weight: 700;
+           color: #333;
+           margin-bottom: 10px;
+        }
+        .ad-modal-message {
+           font-size: 1rem;
+           color: #666;
+           line-height: 1.4;
+           margin-bottom: 25px;
+        }
+        .ad-modal-btn {
+           background: black;
+           color: white;
+           border: none;
+           padding: 12px 40px;
+           border-radius: 30px;
+           font-size: 1.1rem;
+           font-weight: 600;
+           cursor: pointer;
+           transition: transform 0.2s;
+        }
+        .ad-modal-btn:active {
+           transform: scale(0.95);
+        }
+        @keyframes adPopIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

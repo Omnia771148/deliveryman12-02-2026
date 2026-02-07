@@ -1,0 +1,417 @@
+/* CSS for Active Deliveries Page - Aligned with User's Earty/Orange Theme */
+/* Using colors from orderspage.css but with the requested layout changes */
+
+.ad-page-container {
+    background-color: #F8F5F0;
+    /* Earthy light background */
+    min-height: 100vh;
+    padding: 20px;
+    padding-bottom: 90px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header Styling */
+.ad-header {
+    background-color: #E3D5C2;
+    /* Darker tan */
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.ad-header-icon {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.ad-title {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.ad-header-text {
+    font-size: 0.9rem;
+    color: #333;
+    text-align: right;
+}
+
+/* Main Card Container */
+.ad-card {
+    background-color: #E3D5C2;
+    /* Matching the orders page card color */
+    border-radius: 15px;
+    margin-bottom: 15px;
+    /* Standard spacing for main cards */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    color: #222;
+}
+
+/* Layout Grid */
+.ad-card-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Split between details and items */
+    gap: 0;
+}
+
+/* Left Column: Details */
+.ad-main-details {
+    padding: 15px;
+    /* Reduced padding */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ad-order-id {
+    margin-bottom: 10px;
+    /* Reduced from 20px */
+    text-align: center;
+    border-bottom: 2px solid #000;
+    /* Bold black line 2px */
+    padding-bottom: 8px;
+    /* Reduced padding */
+}
+
+.ad-order-id span {
+    font-size: 1rem;
+    color: #333;
+    font-weight: 800;
+    display: inline-block;
+    border-bottom: none;
+    /* Removed underline */
+    margin-bottom: 4px;
+    /* Reduced margin */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-bottom: 0;
+}
+
+.ad-order-value {
+    font-size: 2rem;
+    /* Much larger */
+    font-weight: 900;
+    color: #2c3e50;
+    letter-spacing: -0.5px;
+    display: block;
+    line-height: 1.1;
+}
+
+/* Restaurant Section as a Separate Card */
+.ad-restaurant-section {
+    background-color: #F8F5F0;
+    /* Inset card look */
+    padding: 10px;
+    /* Reduced padding */
+    border-radius: 12px;
+    margin-bottom: 10px;
+    /* Reduced from 20px - Closer to elements below */
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ad-restaurant-name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #3e2723;
+    /* Very Dark Brown text */
+    background-color: transparent;
+    /* Removed background */
+    margin: 0 0 5px 0;
+    /* Reduced margin */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0;
+    border-radius: 0;
+    display: block;
+    box-shadow: none;
+    line-height: 1.2;
+}
+
+.ad-location-badge {
+    background-color: #4CAF50;
+    /* Green background */
+    padding: 6px 15px;
+    /* Slightly tighter padding */
+    border-radius: 20px;
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    /* White text */
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    margin-top: 2px;
+}
+
+.ad-earnings {
+    margin-top: 5px;
+    /* Drastically reduced from 15px */
+    background-color: #F8F5F0;
+    /* Matching items column specific background */
+    padding: 10px;
+    /* Reduced padding */
+    border-radius: 12px;
+    text-align: center;
+    border: none;
+    /* Removed border */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.ad-earnings span {
+    font-size: 0.85rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.ad-earnings-amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #27ae60;
+}
+
+/* Right Column: Items */
+.ad-items-column {
+    padding: 15px;
+    background-color: #F8F5F0;
+    /* Page background color as requested */
+    border-radius: 12px;
+    /* Curve at the borders */
+    margin: 10px;
+    /* Add margin to separate from the container edges */
+    display: flex;
+    flex-direction: column;
+}
+
+.ad-items-title {
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #333;
+    /* border-bottom: 1px solid rgba(0, 0, 0, 0.1); */
+    padding-bottom: 5px;
+    text-align: center;
+    /* Centered bold title */
+    font-size: 1.1rem;
+    border-bottom: 2px solid #333;
+}
+
+/* New Class for Items Header Row */
+.ad-items-header-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 5px;
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 800;
+    /* Bold heading */
+    text-transform: uppercase;
+}
+
+.ad-items-list {
+    flex-grow: 1;
+}
+
+.ad-item-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+}
+
+.ad-item-name {
+    font-weight: 500;
+}
+
+.ad-item-qty {
+    font-weight: bold;
+    background: transparent;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Footer & Pickup Button - Ensure high contrast */
+.ad-card-footer {
+    padding: 15px;
+    /* Reduced padding */
+    background-color: transparent;
+    /* Remove footer background to let button stand out */
+    display: flex;
+    justify-content: center;
+    /* Center the button */
+    border-top: none;
+}
+
+.ad-btn-pickup {
+    background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+    /* Deep Green Gradient */
+    color: white;
+    border: none;
+    padding: 16px 0;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(27, 94, 32, 0.4);
+    width: 100%;
+}
+
+@media (min-width: 600px) {
+    .ad-btn-pickup {
+        min-width: 100%;
+        /* Make full width even on desktop for impact */
+    }
+}
+
+.ad-btn-pickup:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(27, 94, 32, 0.5);
+}
+
+/* User View / Verify Section */
+.ad-user-view-container {
+    padding: 20px;
+}
+
+.ad-back-link {
+    cursor: pointer;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #555;
+    display: inline-block;
+}
+
+.ad-customer-details {
+    background-color: #F8F5F0;
+    /* Earthy light background */
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+/* Center the map button container if it isn't already */
+.ad-customer-details>div[style*="text-align: right"] {
+    text-align: center !important;
+    margin-top: 15px;
+}
+
+.ad-detail-label {
+    width: 80px;
+    font-weight: 600;
+    color: #555;
+}
+
+.ad-verify-box {
+    background-color: #F8F5F0;
+    /* Earthy light background */
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.ad-verify-title {
+    display: block;
+    margin-bottom: 15px;
+    font-weight: 700;
+    color: #2e7d32;
+    text-align: center;
+}
+
+.ad-verify-controls {
+    display: flex;
+    flex-direction: column;
+    /* Vertical layout */
+    gap: 15px;
+    align-items: center;
+}
+
+.ad-otp-container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    width: 100%;
+}
+
+.ad-otp-input {
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+}
+
+.ad-otp-input:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.ad-btn-verify {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px 0;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    width: 100%;
+    /* Full width button */
+    font-size: 1.1rem;
+    text-transform: uppercase;
+}
+
+
+
+/* Empty State - Centered in page */
+.ad-no-orders {
+    background-color: #E3D5C2;
+    border-radius: 20px;
+    padding: 60px 40px;
+    text-align: center;
+    color: #333;
+    flex-grow: 1;
+    /* Take remaining height */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .ad-card-content {
+        grid-template-columns: 1fr;
+    }
+
+    .ad-main-details {
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+}
