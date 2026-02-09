@@ -54,7 +54,7 @@ export async function POST(request) {
       );
     }
 
-    // ✅ FETCH DELIVERY BOY DETAILS (Use existing if available, else fetch)
+    // ✅ FETCH DELIVERY BOY DETAILS (Us, else fetch)
     // We need account details from the user collection regardless
     let deliveryBoyName = order.deliveryBoyName || "";
     let deliveryBoyPhone = order.deliveryBoyPhone || "";
