@@ -383,7 +383,7 @@ export default function ActiveDeliveriesPage() {
                                 value={char}
                                 onFocus={(e) => e.target.select()}
                                 onChange={(e) => {
-                                  const val = e.target.value.toUpperCase();
+                                  const val = e.target.value;
 
                                   const digit = val.slice(-1);
 
