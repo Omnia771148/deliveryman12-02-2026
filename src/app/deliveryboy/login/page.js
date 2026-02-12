@@ -18,6 +18,7 @@ export default function Login() {
   const [inputPassword, setInputPassword] = useState("");
   const [loggedInUserId, setLoggedInUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true); // Added loading state
+  const [showError, setShowError] = useState(false); // Error modal state
   const router = useRouter();
 
   useEffect(() => {
@@ -82,10 +83,10 @@ export default function Login() {
       localStorage.setItem("loginTimestamp", new Date().getTime().toString());
 
       setLoggedInUserId(matchedUser._id);
-      alert("Login successful!");
+      setIsLoading(true);
       window.location.href = "/mainpage";
     } else {
-      alert("Incorrect phone or password");
+      setShowError(true);
     }
   };
 
@@ -183,6 +184,25 @@ export default function Login() {
         )}
 
       </div>
+
+      {/* Error Modal */}
+      {showError && (
+        <div className="modal-overlay">
+          <div className="error-modal">
+            <div className="error-icon-circle">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <div className="error-message">
+              Username/Password are incorrect please Retry
+            </div>
+            <button className="retry-button" onClick={() => setShowError(false)}>
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
