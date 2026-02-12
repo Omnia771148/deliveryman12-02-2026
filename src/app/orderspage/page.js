@@ -409,15 +409,6 @@ export default function AcceptedOrders() {
               />
             </div>
 
-            <div className="mt-3 w-100 text-center">
-              <button
-                className="modal-button w-100"
-                onClick={() => setMapModal({ ...mapModal, show: false })}
-                style={{ backgroundColor: '#e74c3c', maxWidth: '100%' }}
-              >
-                Close Map
-              </button>
-            </div>
           </div>
         </div>
       )}

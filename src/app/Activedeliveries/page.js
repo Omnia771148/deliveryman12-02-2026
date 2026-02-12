@@ -544,15 +544,6 @@ export default function ActiveDeliveriesPage() {
               />
             </div>
 
-            <div className="mt-3 w-100 text-center">
-              <button
-                className="ad-modal-btn w-100"
-                onClick={() => setMapModal({ ...mapModal, show: false })}
-                style={{ backgroundColor: '#e74c3c' }}
-              >
-                Close Map
-              </button>
-            </div>
           </div>
         </div>
       )}
